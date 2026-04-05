@@ -1,6 +1,6 @@
 # HydroFlow - Your Personal Hydration Reminder
 
-![HydroFlow Screenshot](https://i.ibb.co/nqCJcvZ8/Rage2bait.png)
+![HydroFlow Screenshot](https://i.ibb.co/XkJTzGND/HYDRATE.png)
 
 HydroFlow is a simple, elegant, and customizable hydration reminder application built with React. It's designed to help you stay hydrated throughout the day, improving focus, energy levels, and overall health. It can be installed as a Progressive Web App (PWA) for a native app-like experience on your desktop, **directly from your browser!**
 
