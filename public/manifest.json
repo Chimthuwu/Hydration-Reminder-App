@@ -1,0 +1,17 @@
+{
+  "name": "HydroFlow: Smart Hydration Reminder",
+  "short_name": "HydroFlow",
+  "description": "Stay hydrated with timed alerts and refreshing visuals.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3105/3105807.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
