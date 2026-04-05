@@ -4,8 +4,9 @@
   "description": "Stay hydrated with timed alerts and refreshing visuals.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#2563eb",
+  "display_override": ["window-controls-overlay"],
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "run_on_os_login": "auto",
   "icons": [
     {

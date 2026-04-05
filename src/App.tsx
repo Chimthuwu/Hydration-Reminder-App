@@ -191,6 +191,14 @@ export default function App() {
   if (isBackgroundMode) {
     return (
       <div className="min-h-screen flex items-end justify-end p-4 pointer-events-none">
+        {/* Title Bar Drag Area for Window Controls Overlay */}
+        <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Droplets size={14} className="text-blue-500" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">HydroFlow</span>
+          </div>
+        </div>
+
         <motion.div 
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -229,6 +237,14 @@ export default function App() {
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-500 ${
       isDarkMode ? 'bg-slate-950 text-slate-200' : 'bg-blue-50 text-slate-900'
     }`}>
+      {/* Title Bar Drag Area for Window Controls Overlay */}
+      <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <Droplets size={14} className="text-blue-500" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">HydroFlow</span>
+        </div>
+      </div>
+
       {/* Startup Prompt Modal */}
       <AnimatePresence>
         {showStartupPrompt && (
