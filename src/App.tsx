@@ -66,6 +66,16 @@ export default function App() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
+    // Prevent accidental close
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isActive) {
+        e.preventDefault();
+        e.returnValue = 'HydroFlow needs to stay open to remind you to hydrate! Please minimize instead of closing.';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     // Check if user has seen startup prompt
     const hasSeenPrompt = localStorage.getItem('hydroflow_startup_prompt');
     if (!hasSeenPrompt) {
@@ -75,8 +85,20 @@ export default function App() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [customSound]);
+  }, [customSound, isActive]);
+
+  // Update Taskbar Badge
+  useEffect(() => {
+    if ('setAppBadge' in navigator && stats.glasses > 0) {
+      try {
+        (navigator as any).setAppBadge(stats.glasses);
+      } catch (e) {
+        console.error('Badge failed', e);
+      }
+    }
+  }, [stats.glasses]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -676,6 +698,16 @@ export default function App() {
                           "Browsers cannot automatically set startup for security, but once enabled, HydroFlow will launch every time you turn on your PC!"
                         </p>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-blue-600/10 border border-blue-600/20 flex gap-3">
+                    <Info size={20} className="text-blue-500 flex-shrink-0" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Background Tip</p>
+                      <p className="text-xs text-blue-400 leading-relaxed">
+                        To keep the timer running, <strong>Minimize</strong> the app instead of closing it. PWAs live in your Taskbar rather than the System Tray!
+                      </p>
                     </div>
                   </div>
                 </div>
