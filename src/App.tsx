@@ -613,9 +613,6 @@ export default function App() {
                     alt="Hydration" 
                     className="w-full h-auto block"
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&q=80&w=800';
-                    }}
                   />
                 </div>
                 
