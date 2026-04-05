@@ -475,7 +475,7 @@ export default function App() {
                 </button>
               </div>
               
-              <div className="space-y-6">
+              <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-6 pb-6">
                 <div>
                   <label className={`block text-[10px] font-bold uppercase mb-3 ${
                     isDarkMode ? 'text-slate-500' : 'text-slate-400'
