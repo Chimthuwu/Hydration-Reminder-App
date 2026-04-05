@@ -14,12 +14,19 @@ import {
   RotateCcw, 
   X, 
   CheckCircle2,
-  BellRing
+  BellRing,
+  Monitor,
+  Download,
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const DEFAULT_INTERVAL = 40; // minutes
-const NOTIFICATION_SOUND = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
+const SOUND_OPTIONS = [
+  { id: 'hydrate', name: 'Hydrate Ping', url: '/HYDRATE.mp3' },
+  { id: 'classic', name: 'Classic Alert', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' }
+];
 const HYDRATION_IMAGES = [
   '/HYDRATE.png'
 ];
@@ -36,14 +43,29 @@ export default function App() {
   const [isBackgroundMode, setIsBackgroundMode] = useState(false);
   const [showStartupPrompt, setShowStartupPrompt] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [showStartupGuide, setShowStartupGuide] = useState(false);
+  const [customSound, setCustomSound] = useState(SOUND_OPTIONS[0].url);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize audio and check for startup prompt
   useEffect(() => {
-    audioRef.current = new Audio(NOTIFICATION_SOUND);
+    audioRef.current = new Audio(customSound);
     
+    // PWA Install Prompt Listener
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
     // Check if user has seen startup prompt
     const hasSeenPrompt = localStorage.getItem('hydroflow_startup_prompt');
     if (!hasSeenPrompt) {
@@ -52,19 +74,33 @@ export default function App() {
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [customSound]);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+    }
+  };
+
+  const playNotification = useCallback(() => {
+    if (isMuted) return;
+    const audio = new Audio(customSound);
+    audio.play().catch(err => console.log('Audio play failed:', err));
+  }, [isMuted, customSound]);
 
   const triggerReminder = useCallback(() => {
     setIsActive(false);
     setShowReminder(true);
     setIsBackgroundMode(false); // Bring to foreground when reminder triggers
     setCurrentImage(HYDRATION_IMAGES[Math.floor(Math.random() * HYDRATION_IMAGES.length)]);
-    
-    if (!isMuted && audioRef.current) {
-      audioRef.current.play().catch(e => console.log("Audio play blocked", e));
-    }
-  }, [isMuted]);
+    playNotification();
+  }, [playNotification]);
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -218,6 +254,48 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Card */}
+      <AnimatePresence>
+        {showInstallBanner && (
+          <motion.div 
+            initial={{ y: -100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -100, opacity: 0 }}
+            className="fixed top-6 left-6 right-6 z-[100] flex justify-center pointer-events-none"
+          >
+            <div className={`max-w-md w-full p-4 rounded-2xl shadow-2xl border pointer-events-auto flex items-center justify-between gap-4 ${
+              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-600 rounded-xl text-white">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">Install HydroFlow</p>
+                  <p className="text-[10px] text-slate-400">Run locally and enable auto-startup.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowInstallBanner(false)}
+                  className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-50 text-slate-400'}`}
+                >
+                  <X size={16} />
+                </button>
+                <button 
+                  onClick={() => {
+                    handleInstall();
+                    setShowInstallBanner(false);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95 transition-all"
+                >
+                  Install
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -406,6 +484,79 @@ export default function App() {
                     Staying hydrated improves focus, energy levels, and overall health. We recommend 250ml every 40-60 minutes.
                   </p>
                 </div>
+
+                <div className="space-y-4">
+                  <label className={`block text-[10px] font-bold uppercase ${
+                    isDarkMode ? 'text-slate-500' : 'text-slate-400'
+                  }`}>
+                    Notification Sound
+                  </label>
+                  <div className="space-y-2">
+                    {SOUND_OPTIONS.map((sound) => (
+                      <button
+                        key={sound.id}
+                        onClick={() => setCustomSound(sound.url)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                          customSound === sound.url
+                          ? (isDarkMode ? 'bg-blue-600/20 border-blue-600 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-600')
+                          : (isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500')
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Volume2 size={16} />
+                          <span className="text-sm font-medium">{sound.name}</span>
+                        </div>
+                        {customSound === sound.url && <CheckCircle2 size={16} />}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-slate-800/50 bg-slate-900/30 mt-2">
+                    <button 
+                      onClick={playNotification}
+                      className={`flex items-center gap-2 text-xs font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                    >
+                      <Play size={14} />
+                      Test Sound
+                    </button>
+                    <button 
+                      onClick={() => setIsMuted(!isMuted)}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        isMuted 
+                        ? 'bg-slate-800 text-slate-400' 
+                        : 'bg-blue-600 text-white'
+                      }`}
+                    >
+                      {isMuted ? 'Muted' : 'Enabled'}
+                    </button>
+                  </div>
+                </div>
+
+                {isInstallable && (
+                  <div className="pt-4 border-t border-slate-800/50">
+                    <button 
+                      onClick={handleInstall}
+                      className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <Download size={18} />
+                      Install as Desktop App
+                    </button>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <button 
+                    onClick={() => setShowStartupGuide(true)}
+                    className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-sm font-bold transition-all ${
+                      isDarkMode 
+                      ? 'border-slate-800 text-slate-400 hover:bg-slate-800' 
+                      : 'border-slate-100 text-slate-500 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Monitor size={18} />
+                    Auto-Startup Guide
+                  </button>
+                </div>
               </div>
               
               <button 
@@ -473,6 +624,73 @@ export default function App() {
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Startup Guide Modal */}
+      <AnimatePresence>
+        {showStartupGuide && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className={`max-w-md w-full rounded-3xl overflow-hidden shadow-2xl border ${
+                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+              }`}
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-600 rounded-xl text-white">
+                      <Monitor size={24} />
+                    </div>
+                    <h2 className="text-xl font-bold">Auto-Startup Guide</h2>
+                  </div>
+                  <button onClick={() => setShowStartupGuide(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold">1</div>
+                    <div>
+                      <p className="font-bold mb-1">Install the App</p>
+                      <p className="text-sm text-slate-400 leading-relaxed">Click the "Install" button in the settings or browser address bar to save HydroFlow to your PC.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold">2</div>
+                    <div>
+                      <p className="font-bold mb-1">Enable Startup</p>
+                      <p className="text-sm text-slate-400 leading-relaxed">
+                        Right-click the app in your Taskbar → <span className="text-blue-400">App Settings</span> → Toggle <span className="text-blue-400">"Starts at login"</span>.
+                      </p>
+                      <div className="mt-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                        <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Pro Tip</p>
+                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                          "Browsers cannot automatically set startup for security, but once enabled, HydroFlow will launch every time you turn on your PC!"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setShowStartupGuide(false)}
+                  className="mt-8 w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all active:scale-95"
+                >
+                  Got it!
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Background Decoration */}
       <div className="fixed -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
