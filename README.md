@@ -1,5 +1,7 @@
 # **💧 iFAGGOT 💧**
-
+<div align="center">
+  <img src="https://i.ibb.co/XkJTzGND/HYDRATE.png" alt="HydroFlow Screenshot" width="700">
+</div>
 ### _The Hydration App That Makes a **SPLASH!**_
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
@@ -13,9 +15,7 @@
 
 <br>
 
-<div align="center">
-  <img src="https://i.ibb.co/nqCJcvZ8/Rage2bait.png" alt="HydroFlow Screenshot" width="700">
-</div>
+
 
 <br>
 
