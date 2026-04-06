@@ -24,11 +24,11 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const DEFAULT_INTERVAL = 40; // minutes
 const SOUND_OPTIONS = [
-  { id: 'hydrate', name: 'Hydrate Ping', url: '/HYDRATE.mp3' },
+  { id: 'hydrate', name: 'Hydrate Ping', url: 'HYDRATE.mp3' },
   { id: 'classic', name: 'Classic Alert', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' }
 ];
 const HYDRATION_IMAGES = [
-  '/HYDRATE.png'
+  'HYDRATE.png'
 ];
 
 export default function App() {
@@ -82,6 +82,15 @@ export default function App() {
       setShowStartupPrompt(true);
     }
 
+    // Attempt to resize window for standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      try {
+        window.resizeTo(400, 600);
+      } catch (e) {
+        console.log('Window resize not supported');
+      }
+    }
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -120,7 +129,9 @@ export default function App() {
     setIsActive(false);
     setShowReminder(true);
     setIsBackgroundMode(false); // Bring to foreground when reminder triggers
-    setCurrentImage(HYDRATION_IMAGES[Math.floor(Math.random() * HYDRATION_IMAGES.length)]);
+    const nextImg = HYDRATION_IMAGES[Math.floor(Math.random() * HYDRATION_IMAGES.length)];
+    console.log('Triggering reminder with image:', nextImg);
+    setCurrentImage(nextImg);
     playNotification();
   }, [playNotification]);
 
@@ -190,7 +201,9 @@ export default function App() {
 
   if (isBackgroundMode) {
     return (
-      <div className="min-h-screen flex items-end justify-end p-4 pointer-events-none">
+      <div className={`min-h-screen flex items-end justify-end p-4 pointer-events-none transition-colors duration-500 ${
+        isDarkMode ? 'bg-slate-900/0' : 'bg-blue-50/0'
+      }`}>
         {/* Title Bar Drag Area for Window Controls Overlay */}
         <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
           <div className="flex items-center gap-2 pointer-events-auto">
@@ -234,8 +247,8 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-500 ${
-      isDarkMode ? 'bg-slate-950 text-slate-200' : 'bg-blue-50 text-slate-900'
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 overflow-hidden ${
+      isDarkMode ? 'bg-slate-900 text-slate-200' : 'bg-blue-50 text-slate-900'
     }`}>
       {/* Title Bar Drag Area for Window Controls Overlay */}
       <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
@@ -335,12 +348,12 @@ export default function App() {
       </AnimatePresence>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`w-full max-w-sm rounded-[2rem] overflow-hidden relative border transition-all duration-500 ${
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-500 ${
           isDarkMode 
-          ? 'bg-slate-900/80 border-slate-800/50 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] backdrop-blur-xl' 
-          : 'bg-white/80 border-white/20 shadow-xl backdrop-blur-md'
+          ? 'bg-slate-900 text-slate-200' 
+          : 'bg-white text-slate-900'
         }`}
       >
         {/* Header */}
@@ -611,28 +624,32 @@ export default function App() {
         <AnimatePresence>
           {showReminder && (
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="fixed bottom-4 right-4 z-50 max-w-sm w-full pointer-events-auto"
             >
-              <motion.div 
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className={`rounded-[2.5rem] overflow-hidden max-w-sm w-full shadow-2xl border ${
-                  isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-blue-50'
-                }`}
-              >
-                <div className="relative">
+              <div className={`rounded-3xl overflow-hidden shadow-2xl border-2 ${
+                isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-blue-100'
+              } backdrop-blur-xl`}>
+                <div className="relative bg-slate-800/50 min-h-[200px] flex items-center justify-center overflow-hidden">
                   <img 
                     src={currentImage} 
                     alt="Hydration" 
-                    className="w-full h-auto block"
+                    className="w-full h-auto block object-cover"
                     referrerPolicy="no-referrer"
+                    onLoad={() => console.log('Image loaded successfully:', currentImage)}
+                    onError={(e) => {
+                      console.error('Image failed to load:', currentImage);
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('picsum.photos')) {
+                        target.src = 'https://picsum.photos/seed/hydrate/400/300';
+                      }
+                    }}
                   />
                 </div>
                 
-                <div className="px-6 pt-6 text-center">
+                <div className="px-6 pt-4 text-center">
                   <h3 className={`text-xl font-bold leading-tight mb-1 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>💦💦💦</h3>
                   <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Drink it all down, swallow it.</p>
                 </div>
@@ -654,7 +671,7 @@ export default function App() {
                     Snooze 5m
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -737,15 +754,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Background Decoration */}
-      <div className="fixed -z-10 top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full transition-colors duration-1000 ${
-          isDarkMode ? 'bg-blue-900/20' : 'bg-blue-200/30'
-        }`} />
-        <div className={`absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] blur-[120px] rounded-full transition-colors duration-1000 ${
-          isDarkMode ? 'bg-indigo-900/20' : 'bg-indigo-200/30'
-        }`} />
-      </div>
+      {/* Background Decoration Removed for Module Look */}
     </div>
   );
 }
