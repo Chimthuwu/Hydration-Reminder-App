@@ -18,7 +18,9 @@ import {
   Monitor,
   Download,
   Info,
-  ExternalLink
+  ExternalLink,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -379,7 +381,7 @@ export default function App() {
                   isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
                 }`}
               >
-                {isDarkMode ? <RotateCcw size={18} /> : <Play size={18} />}
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
               </button>
               <button 
                 onClick={() => setIsMuted(!isMuted)}
