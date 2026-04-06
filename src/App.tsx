@@ -369,10 +369,12 @@ export default function App() {
             isDarkMode ? 'border-slate-800/50' : 'border-slate-100'
           }`}>
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-blue-600 rounded-lg">
-                <Droplets className="text-white w-5 h-5" />
-              </div>
-              <h1 className="font-bold text-lg tracking-tight">HydroFlow</h1>
+              <img
+                src="https://i.ibb.co/XkJTzGND/HYDRATE.png"
+                alt="HydroFlow Logo"
+                className="object-contain h-16 w-auto"
+              />
+              <h1 className="font-bold text-lg tracking-tight">iFaggot</h1>
             </div>
             <div className="flex items-center gap-1">
               <button 
