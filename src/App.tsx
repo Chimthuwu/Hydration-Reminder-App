@@ -372,7 +372,7 @@ export default function App() {
               <img
                 src="https://i.ibb.co/XkJTzGND/HYDRATE.png"
                 alt="HydroFlow Logo"
-                className="object-contain h-16 w-auto"
+                className="object-contain h-18 w-auto"
               />
               <h1 className="font-bold text-lg tracking-tight">iFaggot</h1>
             </div>
