@@ -310,7 +310,7 @@ export default function App() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`w-full max-w-[400px] h-full sm:h-[min(800px,90vh)] flex flex-col overflow-hidden relative transition-all duration-500 sm:rounded-[2.5rem] sm:shadow-2xl sm:border ${
+        className={`w-full max-w-[400px] h-fit flex flex-col overflow-hidden relative transition-all duration-500 sm:rounded-[2.5rem] sm:shadow-2xl sm:border ${
           isDarkMode 
           ? 'bg-slate-900 border-slate-800 text-slate-200' 
           : 'bg-white border-blue-50 text-slate-900'
@@ -363,7 +363,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div className="flex flex-col overflow-hidden relative">
           {/* Header */}
           <div className={`p-5 pt-8 flex items-center justify-between border-b ${
             isDarkMode ? 'border-slate-800/50' : 'border-slate-100'
