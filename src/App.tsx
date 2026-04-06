@@ -24,8 +24,9 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const DEFAULT_INTERVAL = 40; // minutes
 const SOUND_OPTIONS = [
-  { id: 'hydrate', name: 'Hydrate Ping', url: '/HYDRATE.mp3' },
-  { id: 'classic', name: 'Classic Alert', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' }
+  { id: 'hydrate', name: 'Hydrate Ping', url: 'https://www.myinstants.com/media/sounds/cute-uwu.mp3' },
+  { id: 'classic', name: 'Classic Alert', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' },
+  { id: 'bubble', name: 'Bubble Pop', url: 'https://assets.mixkit.co/active_storage/sfx/2868/2868-preview.mp3' }
 ];
 const HYDRATION_IMAGES = [
   'https://i.ibb.co/XkJTzGND/HYDRATE.png'
@@ -50,11 +51,15 @@ export default function App() {
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fallbackAudioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize audio and check for startup prompt
   useEffect(() => {
-    audioRef.current = new Audio(customSound);
+    // Pre-warm the audio object
+    const audio = new Audio(customSound);
+    audio.load();
+    audioRef.current = audio;
     
     // PWA Install Prompt Listener
     const handleBeforeInstallPrompt = (e: any) => {
@@ -120,9 +125,37 @@ export default function App() {
   };
 
   const playNotification = useCallback(() => {
-    if (isMuted) return;
-    const audio = new Audio(customSound);
-    audio.play().catch(err => console.log('Audio play failed:', err));
+    if (isMuted) {
+      console.log('Sound is muted, skipping playback');
+      return;
+    }
+    
+    console.log('Attempting to play sound:', customSound);
+    
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play()
+        .then(() => {
+          console.log('Primary audio playback started successfully');
+        })
+        .catch(err => {
+          console.error('Primary audio playback failed:', err);
+          
+          if (err.name === 'NotAllowedError') {
+            console.warn('Autoplay blocked. User interaction required.');
+            return;
+          }
+
+          // Fallback mechanism
+          if (fallbackAudioRef.current) {
+            console.log('Attempting fallback to local /HYDRATE.mp3');
+            fallbackAudioRef.current.currentTime = 0;
+            fallbackAudioRef.current.play().catch(fallbackErr => {
+              console.error('Fallback audio also failed:', fallbackErr);
+            });
+          }
+        });
+    }
   }, [isMuted, customSound]);
 
   const triggerReminder = useCallback(() => {
@@ -204,6 +237,10 @@ export default function App() {
       <div className={`min-h-screen flex items-end justify-end p-4 pointer-events-none transition-colors duration-500 ${
         isDarkMode ? 'bg-slate-900/0' : 'bg-blue-50/0'
       }`}>
+        {/* Hidden Audio Elements for Reliable Playback */}
+        <audio ref={audioRef} src={customSound} preload="auto" />
+        <audio ref={fallbackAudioRef} src="/HYDRATE.mp3" preload="auto" />
+
         {/* Title Bar Drag Area for Window Controls Overlay */}
         <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
           <div className="flex items-center gap-2 pointer-events-auto">
@@ -250,6 +287,10 @@ export default function App() {
     <div className={`min-h-screen flex flex-col transition-colors duration-500 overflow-hidden ${
       isDarkMode ? 'bg-slate-900 text-slate-200' : 'bg-blue-50 text-slate-900'
     }`}>
+      {/* Hidden Audio Elements for Reliable Playback */}
+      <audio ref={audioRef} src={customSound} preload="auto" />
+      <audio ref={fallbackAudioRef} src="/HYDRATE.mp3" preload="auto" />
+
       {/* Title Bar Drag Area for Window Controls Overlay */}
       <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
         <div className="flex items-center gap-2 pointer-events-auto">
