@@ -49,6 +49,7 @@ export default function App() {
   const [showStartupGuide, setShowStartupGuide] = useState(false);
   const [customSound, setCustomSound] = useState(SOUND_OPTIONS[0].url);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fallbackAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -85,6 +86,11 @@ export default function App() {
     const hasSeenPrompt = localStorage.getItem('hydroflow_startup_prompt');
     if (!hasSeenPrompt) {
       setShowStartupPrompt(true);
+    }
+
+    // Check notification permission
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
     }
 
     // Attempt to resize window for standalone mode
@@ -166,7 +172,16 @@ export default function App() {
     console.log('Triggering reminder with image:', nextImg);
     setCurrentImage(nextImg);
     playNotification();
-  }, [playNotification]);
+
+    // System Notification
+    if (notificationPermission === 'granted') {
+      new Notification('Time to Hydrate!', {
+        body: 'Take a sip of water to stay focused and healthy.',
+        icon: '/HYDRATE.png',
+        tag: 'hydration-reminder'
+      });
+    }
+  }, [playNotification, notificationPermission]);
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -191,6 +206,12 @@ export default function App() {
 
   const toggleTimer = () => {
     if (!isActive) {
+      // Request notification permission when starting
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
       setIsActive(true);
       setIsBackgroundMode(true); // Dismiss to background when starting
     } else {
@@ -241,14 +262,6 @@ export default function App() {
         <audio ref={audioRef} src={customSound} preload="auto" />
         <audio ref={fallbackAudioRef} src="/HYDRATE.mp3" preload="auto" />
 
-        {/* Title Bar Drag Area for Window Controls Overlay */}
-        <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <Droplets size={14} className="text-blue-500" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">HydroFlow</span>
-          </div>
-        </div>
-
         <motion.div 
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -284,156 +297,108 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-500 overflow-hidden ${
-      isDarkMode ? 'bg-slate-900 text-slate-200' : 'bg-blue-50 text-slate-900'
+    <div className={`min-h-screen flex flex-col items-center justify-center transition-colors duration-500 overflow-hidden ${
+      isDarkMode ? 'bg-slate-950' : 'bg-blue-100/50'
     }`}>
       {/* Hidden Audio Elements for Reliable Playback */}
       <audio ref={audioRef} src={customSound} preload="auto" />
       <audio ref={fallbackAudioRef} src="/HYDRATE.mp3" preload="auto" />
 
-      {/* Title Bar Drag Area for Window Controls Overlay */}
-      <div className="fixed top-0 left-0 right-0 h-[env(titlebar-area-height,0px)] z-[200] pointer-events-none flex items-center px-4" style={{ WebkitAppRegion: 'drag' } as any}>
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <Droplets size={14} className="text-blue-500" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">HydroFlow</span>
-        </div>
-      </div>
-
-      {/* Startup Prompt Modal */}
-      <AnimatePresence>
-        {showStartupPrompt && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              className={`rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border ${
-                isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-blue-50'
-              }`}
-            >
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
-                isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'
-              }`}>
-                <BellRing size={32} className="text-blue-500" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Set as Startup App?</h2>
-              <p className={`mb-8 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                Would you like HydroFlow to open automatically every time your computer starts? You'll never miss a sip.
-              </p>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={() => dismissStartupPrompt(true)}
-                  className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
-                >
-                  Yes, enable on startup
-                </button>
-                <button 
-                  onClick={() => dismissStartupPrompt(false)}
-                  className={`w-full py-4 font-bold rounded-2xl transition-colors ${
-                    isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                  }`}
-                >
-                  Maybe later
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Card */}
-      <AnimatePresence>
-        {showInstallBanner && (
-          <motion.div 
-            initial={{ y: -100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0 }}
-            className="fixed top-6 left-6 right-6 z-[100] flex justify-center pointer-events-none"
-          >
-            <div className={`max-w-md w-full p-4 rounded-2xl shadow-2xl border pointer-events-auto flex items-center justify-between gap-4 ${
-              isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
-            }`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-600 rounded-xl text-white">
-                  <Download size={20} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">Install HydroFlow</p>
-                  <p className="text-[10px] text-slate-400">Run locally and enable auto-startup.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowInstallBanner(false)}
-                  className={`p-2 rounded-lg transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-50 text-slate-400'}`}
-                >
-                  <X size={16} />
-                </button>
-                <button 
-                  onClick={() => {
-                    handleInstall();
-                    setShowInstallBanner(false);
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-900/20 active:scale-95 transition-all"
-                >
-                  Install
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Main Widget Container */}
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-500 ${
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`w-full max-w-[400px] h-full sm:h-[min(800px,90vh)] flex flex-col overflow-hidden relative transition-all duration-500 sm:rounded-[2.5rem] sm:shadow-2xl sm:border ${
           isDarkMode 
-          ? 'bg-slate-900 text-slate-200' 
-          : 'bg-white text-slate-900'
+          ? 'bg-slate-900 border-slate-800 text-slate-200' 
+          : 'bg-white border-blue-50 text-slate-900'
         }`}
       >
-        {/* Header */}
-        <div className={`p-5 flex items-center justify-between border-b ${
-          isDarkMode ? 'border-slate-800/50' : 'border-slate-100'
-        }`}>
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-blue-600 rounded-lg">
-              <Droplets className="text-white w-5 h-5" />
+        {/* Startup Prompt Modal */}
+        <AnimatePresence>
+          {showStartupPrompt && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className={`rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center border ${
+                  isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-blue-50'
+                }`}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
+                  isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'
+                }`}>
+                  <BellRing size={32} className="text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Set as Startup App?</h2>
+                <p className={`mb-8 leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Would you like HydroFlow to open automatically every time your computer starts? You'll never miss a sip.
+                </p>
+                <div className="flex flex-col gap-3">
+                  <button 
+                    onClick={() => dismissStartupPrompt(true)}
+                    className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-900/20 active:scale-95"
+                  >
+                    Yes, enable on startup
+                  </button>
+                  <button 
+                    onClick={() => dismissStartupPrompt(false)}
+                    className={`w-full py-4 font-bold rounded-2xl transition-colors ${
+                      isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                    }`}
+                  >
+                    Maybe later
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Header */}
+          <div className={`p-5 pt-8 flex items-center justify-between border-b ${
+            isDarkMode ? 'border-slate-800/50' : 'border-slate-100'
+          }`}>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-600 rounded-lg">
+                <Droplets className="text-white w-5 h-5" />
+              </div>
+              <h1 className="font-bold text-lg tracking-tight">HydroFlow</h1>
             </div>
-            <h1 className="font-bold text-lg tracking-tight">HydroFlow</h1>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
+                }`}
+              >
+                {isDarkMode ? <RotateCcw size={18} /> : <Play size={18} />}
+              </button>
+              <button 
+                onClick={() => setIsMuted(!isMuted)}
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
+                }`}
+              >
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+              <button 
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2 rounded-full transition-colors ${
+                  isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
+                }`}
+              >
+                <Settings size={18} />
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className={`p-2 rounded-full transition-colors ${
-                isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
-              }`}
-            >
-              {isDarkMode ? <RotateCcw size={18} /> : <Play size={18} />}
-            </button>
-            <button 
-              onClick={() => setIsMuted(!isMuted)}
-              className={`p-2 rounded-full transition-colors ${
-                isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
-              }`}
-            >
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-            <button 
-              onClick={() => setShowSettings(!showSettings)}
-              className={`p-2 rounded-full transition-colors ${
-                isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'
-              }`}
-            >
-              <Settings size={18} />
-            </button>
-          </div>
-        </div>
 
         {/* Timer Display */}
         <div className="p-6 flex flex-col items-center">
@@ -525,6 +490,8 @@ export default function App() {
           </div>
         </div>
 
+        </div>
+
         {/* Settings Panel */}
         <AnimatePresence>
           {showSettings && (
@@ -575,6 +542,36 @@ export default function App() {
                   <p className="text-xs leading-relaxed">
                     Staying hydrated improves focus, energy levels, and overall health. We recommend 250ml every 40-60 minutes.
                   </p>
+                </div>
+
+                <div className="space-y-4">
+                  <label className={`block text-[10px] font-bold uppercase ${
+                    isDarkMode ? 'text-slate-500' : 'text-slate-400'
+                  }`}>
+                    System Notifications
+                  </label>
+                  <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                    isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-100'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <BellRing size={16} className={notificationPermission === 'granted' ? 'text-green-500' : 'text-slate-400'} />
+                      <span className="text-sm font-medium">
+                        {notificationPermission === 'granted' ? 'Enabled' : notificationPermission === 'denied' ? 'Blocked' : 'Not Set'}
+                      </span>
+                    </div>
+                    {notificationPermission !== 'granted' && (
+                      <button 
+                        onClick={() => {
+                          if ('Notification' in window) {
+                            Notification.requestPermission().then(setNotificationPermission);
+                          }
+                        }}
+                        className="px-3 py-1 bg-blue-600 text-white text-[10px] font-bold rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Enable
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -668,7 +665,7 @@ export default function App() {
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="fixed bottom-4 right-4 z-50 max-w-sm w-full pointer-events-auto"
+              className="absolute bottom-4 right-4 z-50 max-w-[calc(100%-2rem)] w-[320px] pointer-events-auto"
             >
               <div className={`rounded-3xl overflow-hidden shadow-2xl border-2 ${
                 isDarkMode ? 'bg-slate-900 border-slate-700' : 'bg-white border-blue-100'
@@ -743,7 +740,7 @@ export default function App() {
                     </div>
                     <h2 className="text-xl font-bold">Auto-Startup Guide</h2>
                   </div>
-                  <button onClick={() => setShowStartupGuide(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+                  <button onClick={() => setShowStartupGuide(false)} className={`p-2 rounded-full transition-colors ${isDarkMode ? 'hover:bg-slate-800 text-slate-500' : 'hover:bg-slate-100 text-slate-400'}`}>
                     <X size={20} />
                   </button>
                 </div>
@@ -753,7 +750,7 @@ export default function App() {
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold">1</div>
                     <div>
                       <p className="font-bold mb-1">Install the App</p>
-                      <p className="text-sm text-slate-400 leading-relaxed">Click the "Install" button in the settings or browser address bar to save HydroFlow to your PC.</p>
+                      <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Click the "Install" button in the settings or browser address bar to save HydroFlow to your PC.</p>
                     </div>
                   </div>
 
@@ -761,12 +758,12 @@ export default function App() {
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center font-bold">2</div>
                     <div>
                       <p className="font-bold mb-1">Enable Startup</p>
-                      <p className="text-sm text-slate-400 leading-relaxed">
+                      <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                         Right-click the app in your Taskbar → <span className="text-blue-400">App Settings</span> → Toggle <span className="text-blue-400">"Starts at login"</span>.
                       </p>
-                      <div className="mt-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+                      <div className={`mt-3 p-3 rounded-xl border ${isDarkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-100'}`}>
                         <p className="text-[10px] text-slate-500 uppercase font-bold mb-2">Pro Tip</p>
-                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                        <p className={`text-[10px] leading-relaxed italic ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                           "Browsers cannot automatically set startup for security, but once enabled, HydroFlow will launch every time you turn on your PC!"
                         </p>
                       </div>
