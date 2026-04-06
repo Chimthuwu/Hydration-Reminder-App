@@ -1,8 +1,9 @@
-# **💧 iFAGGOT 💧**
+# <div align="center">**💧 iFAGGOT 💧** <br></div>
 <div align="center">
-  <img src="https://i.ibb.co/XkJTzGND/HYDRATE.png" alt="HydroFlow Screenshot" width="700">
+  <img src="https://i.ibb.co/XkJTzGND/HYDRATE.png" alt="HydroFlow Screenshot" width="400" height="370">
 </div>
-### _The Hydration App That Makes a **SPLASH!**_
+
+## _The Hydration App That Makes a **SPLASH!**_
 
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
