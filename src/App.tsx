@@ -24,11 +24,11 @@ import { motion, AnimatePresence } from 'motion/react';
 
 const DEFAULT_INTERVAL = 40; // minutes
 const SOUND_OPTIONS = [
-  { id: 'hydrate', name: 'Hydrate Ping', url: 'HYDRATE.mp3' },
+  { id: 'hydrate', name: 'Hydrate Ping', url: '/HYDRATE.mp3' },
   { id: 'classic', name: 'Classic Alert', url: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3' }
 ];
 const HYDRATION_IMAGES = [
-  'HYDRATE.png'
+  'https://i.ibb.co/XkJTzGND/HYDRATE.png'
 ];
 
 export default function App() {
@@ -642,8 +642,9 @@ export default function App() {
                     onError={(e) => {
                       console.error('Image failed to load:', currentImage);
                       const target = e.target as HTMLImageElement;
-                      if (!target.src.includes('picsum.photos')) {
-                        target.src = 'https://picsum.photos/seed/hydrate/400/300';
+                      // Fallback to local file if the URL fails, but NO generic images
+                      if (target.src !== '/HYDRATE.png') {
+                        target.src = '/HYDRATE.png';
                       }
                     }}
                   />
