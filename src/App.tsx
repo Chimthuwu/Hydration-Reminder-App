@@ -20,9 +20,12 @@ import {
   Info,
   ExternalLink,
   Sun,
-  Moon
+  Moon,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { HydrationChart } from './components/HydrationChart';
 
 const DEFAULT_INTERVAL = 40; // minutes
 const SOUND_OPTIONS = [
@@ -46,6 +49,7 @@ export default function App() {
   const [isBackgroundMode, setIsBackgroundMode] = useState(false);
   const [showStartupPrompt, setShowStartupPrompt] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [showStats, setShowStats] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [showStartupGuide, setShowStartupGuide] = useState(false);
@@ -476,23 +480,51 @@ export default function App() {
           </div>
         </div>
 
-        {/* Stats Section */}
-        <div className={`p-5 grid grid-cols-2 gap-3 border-t ${
-          isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50/50 border-slate-100'
-        }`}>
-          <div className={`p-3.5 rounded-xl border transition-colors ${
-            isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
-          }`}>
-            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Glasses</p>
-            <p className="text-xl font-bold">{stats.glasses}</p>
-          </div>
-          <div className={`p-3.5 rounded-xl border transition-colors ${
-            isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
-          }`}>
-            <p className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Total</p>
-            <p className="text-xl font-bold">{stats.totalMl}ml</p>
-          </div>
+        {/* Toggle Stats Button */}
+        <div className="flex justify-center mb-4">
+          <button 
+            onClick={() => setShowStats(!showStats)}
+            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95 ${
+              isDarkMode 
+              ? 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-300' 
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-600'
+            }`}
+          >
+            {showStats ? 'Hide Stats' : 'Show Stats'}
+            {showStats ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+          </button>
         </div>
+
+        <AnimatePresence>
+          {showStats && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="overflow-hidden"
+            >
+              {/* Stats Section */}
+              <div className={`p-5 grid grid-cols-2 gap-3 border-t ${
+                isDarkMode ? 'bg-slate-900/50 border-slate-800/50' : 'bg-slate-50/50 border-slate-100'
+              }`}>
+                <div className={`p-3.5 rounded-xl border transition-colors ${
+                  isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+                }`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Glasses</p>
+                  <p className="text-xl font-bold">{stats.glasses}</p>
+                </div>
+                <div className={`p-3.5 rounded-xl border transition-colors ${
+                  isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-100'
+                }`}>
+                  <p className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-slate-600' : 'text-slate-400'}`}>Total</p>
+                  <p className="text-xl font-bold">{stats.totalMl}ml</p>
+                </div>
+              </div>
+
+              <HydrationChart isDarkMode={isDarkMode} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         </div>
 
