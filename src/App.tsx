@@ -171,7 +171,6 @@ export default function App() {
   }, [isMuted, customSound]);
 
   const triggerReminder = useCallback(() => {
-    setIsActive(false);
     setShowReminder(true);
     setIsBackgroundMode(false); // Bring to foreground when reminder triggers
     const nextImg = HYDRATION_IMAGES[Math.floor(Math.random() * HYDRATION_IMAGES.length)];
@@ -190,13 +189,12 @@ export default function App() {
   }, [playNotification, notificationPermission]);
 
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
+    if (isActive) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
             triggerReminder();
-            return 0;
+            return intervalMinutes * 60;
           }
           return prev - 1;
         });
@@ -208,7 +206,7 @@ export default function App() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft, triggerReminder]);
+  }, [isActive, triggerReminder, intervalMinutes]);
 
   const toggleTimer = () => {
     if (!isActive) {
@@ -237,8 +235,6 @@ export default function App() {
       totalMl: prev.totalMl + 250
     }));
     setShowReminder(false);
-    resetTimer();
-    setIsActive(true);
     setIsBackgroundMode(true); // Go back to background after drinking
   };
 
@@ -743,7 +739,7 @@ export default function App() {
                       isDarkMode ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                     }`}
                   >
-                    Snooze 5m
+                    Dismiss
                   </button>
                 </div>
               </div>
